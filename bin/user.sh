@@ -22,7 +22,7 @@ fi
 
 function create_user {
   local username=$1
-  local hue_host result code
+  local hue_host result code userid
   hue_host=$(jshon -e hostname -u < config.json)
   if [[ $? != 0 ]]; then
    printf "No hue hostname was found in the config\n" >&2
@@ -33,7 +33,12 @@ function create_user {
     -d"{\"devicetype\":\"hue-git#$username\"}" \
     "http://$hue_host/api")
   code=$?
-  printf "%s\n" "$result"
+  userid=$(jshon -Q -e 0 -e success -e username -u <<< "$result")
+  if [[ $? != 0 ]]; then
+    printf "%s\n" "$result" >&2
+    return 1
+  fi
+  printf "%s\n" "$userid"
   return $code
 }
 
