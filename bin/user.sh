@@ -4,6 +4,7 @@ USAGE="user.sh
 Usage:
   user.sh create <username>
   user.sh delete <userid>
+  user.sh list <userid>
   user.sh -h
 
 Options:
@@ -42,6 +43,19 @@ function create_user {
   return $code
 }
 
+function list_users {
+  local result code
+  result=$(hue_get "config")
+  code=$?
+  [[ $code == 0 ]] || return $code
+  local userids username
+  userids=$(jshon -Q -e whitelist -k <<< "$result")
+  for userid in ${userids[*]}; do
+    username=$(jshon -Q -e whitelist -e "$userid" -e name -u <<< "$result")
+    printf "%-40s %s\n" "$userid" "$username"
+  done
+}
+
 function delete_user {
   local username=$1
   hue_delete "config/whitelist/$username"
@@ -51,6 +65,7 @@ function delete_user {
 case $1 in
   create) create_user "$2"; ;;
   delete) delete_user "$2"; ;;
+  list) list_users "$2"; ;;
   -h) usage "$USAGE"; ;;
   *) usage_err "$USAGE"; ;;
 esac
